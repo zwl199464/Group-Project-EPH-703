@@ -61,28 +61,38 @@ proc contents data=analysis;
 run;
 
 *checking for missing value;
-proc freq data=analysis;
+/*proc freq data=analysis;
 tables age--miroid;  
-run;
+run;*/
 proc means data=analysis n nmiss maxdec=2;
  var age--miroid   ;
 run;
 *Provide describtive statistics for the data;
 proc means data=analysis n nmiss mean std  median q1 q3 min max maxdec=2;
  var age--miroid   ;
-run;
-
+title "Descriptive Statistics on continuos variables";
+run;title;
 ods output Corr.PearsonCorr = counts;
 ods output Corr.SimpleStats = ss;
  ods output Corr.VarInformation= vi;
 proc corr data= analysis;
-    
-run;
-
+title "Correlation Coeffecient Matrix";
+run;title;
 proc sql;
     create table corre  as 
-        select*
+        select Variable,Label,los,plos
             from counts as c
-            where los >0.3 or los <-0.3 
+            where los >0.1 or los <-0.1 
        ;
 quit;
+proc print data=corre;
+run;
+*Scatter plot for the data;
+proc sgscatter data=analysis;
+ plot los*(gender hr afb sho chf);
+ title "Scatter plot";
+run;title;
+proc reg data=analysis;
+title "Regression Model ";
+      model los = gender hr afb sho chf / ss1 ss2 stb clb covb corrb vif r  partial ;
+run; title;
