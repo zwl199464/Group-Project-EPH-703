@@ -96,3 +96,48 @@ proc reg data=analysis;
 title "Regression Model ";
       model los = gender hr afb sho chf / ss1 ss2 stb clb covb corrb vif r  partial ;
 run; title;
+
+   proc glm data=analysis;
+      class gender afb sho chf;
+      model los=gender afb sho chf hr gender*hr afb*hr sho*hr chf*hr;
+      means gender afb sho chf / tukey deponly;
+     
+   run;
+
+data test ;
+set analysis;
+loghr=log(hr);
+rate=los/hr;
+sqrthr=sqrt(hr);
+sqrtlos=sqrt(los);
+sqhr=(hr**2);
+sqlos =(los**2);
+loglos =log(los);
+output;
+run;
+ods output Corr.PearsonCorr = counts;
+ods output Corr.SimpleStats = ss;
+ ods output Corr.VarInformation= vi;
+proc corr data= test;
+title "Correlation Coeffecient Matrix";
+run;title;
+proc sql;
+    create table corre  as 
+        select Variable,Label,los,plos,loglos,ploglos,sqlos,psqlos,
+        sqrtlos,psqrtlos
+            from counts as c
+            where los >0.1 or los <-0.1 or
+            loglos >0.1 or loglos <-0.1 or
+            sqlos >0.1 or sqlos <-0.1 or
+             sqrtlos >0.1 or sqrtlos <-0.1
+       ;
+quit;
+proc print data=corre;
+run;
+
+proc glm data=analysis;
+class gender ;
+      model los=hr gender /ss1;
+      means gender / hovtest=levene hovtest=bartlett;
+     
+   run;
